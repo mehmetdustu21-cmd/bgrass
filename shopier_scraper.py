@@ -8,6 +8,7 @@ Bu script Shopier satıcı panelinden sipariş bilgilerini toplar.
 
 import os
 import time
+import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,13 +26,24 @@ class ShopierScraper:
         """Selenium WebDriver'ı başlat"""
         print("🌐 Tarayıcı başlatılıyor...")
         options = webdriver.ChromeOptions()
-        # options.add_argument('--headless')  # Tarayıcıyı görmek isterseniz bu satırı yorum yapın
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
+
+        # Bot tespitini zorlaştıracak ayarlar
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+
+        # Normal bir kullanıcı gibi görün
+        options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
         options.add_argument('--start-maximized')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--no-sandbox')
 
         try:
             self.driver = webdriver.Chrome(options=options)
+
+            # WebDriver özelliğini gizle
+            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
         except:
             print("⚠️  Chrome bulunamadı, Firefox deneniyor...")
             self.driver = webdriver.Firefox()
@@ -42,18 +54,24 @@ class ShopierScraper:
         """Shopier siparişler sayfasına git"""
         print("\n📍 Shopier siparişler sayfasına gidiliyor...")
         self.driver.get("https://www.shopier.com/m/orders.php")
-        time.sleep(3)
+        print("⏰ Sayfa yükleniyor...")
+        time.sleep(5)  # Sayfanın tam yüklenmesini bekle
 
     def wait_for_manual_login(self):
         """Kullanıcının manuel giriş yapmasını bekle"""
-        print("\n" + "="*60)
-        print("⏳ LÜTFEN SHOPIER'A GİRİŞ YAPIN")
-        print("="*60)
-        print("Giriş yaptıktan sonra siparişler sayfasında olduğunuzdan emin olun.")
-        print("Hazır olduğunuzda ENTER tuşuna basın...")
+        print("\n" + "="*70)
+        print("⏳ LÜTFEN SHOPIER'A GİRİŞ YAPIN VE CAPTCHA'YI ÇÖZÜN")
+        print("="*70)
+        print("\n📝 ADIMLAR:")
+        print("1. Kullanıcı adı ve şifrenizi girin")
+        print("2. CAPTCHA varsa manuel olarak çözün")
+        print("3. Giriş yapın ve siparişler sayfasının açıldığından emin olun")
+        print("4. Siparişlerinizi görebildiğinizden emin olun")
+        print("\n⏰ İsterseniz çok bekleyebilirsiniz, acele yok!")
+        print("\n✅ Her şey hazır olduğunda ENTER tuşuna basın...")
         input()
         print("\n✅ Devam ediliyor...\n")
-        time.sleep(2)
+        time.sleep(3)
 
     def check_and_enable_arrived_view(self):
         """Gelimiş görünümünü kontrol et ve gerekirse aç"""
@@ -109,8 +127,9 @@ class ShopierScraper:
         print(f"\n📄 Sayfa {self.current_page} işleniyor...")
 
         try:
-            # Sayfanın yüklenmesini bekle
-            time.sleep(3)
+            # Sayfanın yüklenmesini bekle (rastgele gecikme ile insan gibi)
+            wait_time = random.uniform(2, 4)
+            time.sleep(wait_time)
 
             # Tüm sipariş kartlarını bul
             # buyer_fullname ID'sine sahip tüm elementlerin parent container'larını bul
@@ -149,11 +168,18 @@ class ShopierScraper:
 
             print(f"➡️  Sonraki sayfaya geçiliyor...")
 
+            # İnsan gibi davran - küçük bir gecikme
+            time.sleep(random.uniform(1, 2))
+
             # JavaScript ile tıklama (daha güvenilir)
             self.driver.execute_script("arguments[0].click();", next_button)
 
             self.current_page += 1
-            time.sleep(3)  # Sayfanın yüklenmesi için bekle
+
+            # Sayfanın yüklenmesi için daha uzun bekle
+            wait_time = random.uniform(4, 6)
+            print(f"   ⏰ Sayfa yükleniyor ({wait_time:.1f} saniye)...")
+            time.sleep(wait_time)
 
             return True
 
