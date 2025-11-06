@@ -2,303 +2,336 @@
 # -*- coding: utf-8 -*-
 
 """
-Shopier Sipariş Bilgisi Toplama Scripti
+Shopier Sipariş Bilgisi Toplama Scripti - Final Versiyon
 Bu script Shopier satıcı panelinden sipariş bilgilerini toplar.
 """
 
+import sys
+import subprocess
 import os
-import time
-import random
+
+# Gerekli kütüphaneleri kontrol et ve kur
+def check_and_install_packages():
+    """Gerekli Python paketlerini kontrol et ve yoksa kur"""
+    required_packages = {
+        'selenium': 'selenium',
+        'pandas': 'pandas',
+        'openpyxl': 'openpyxl',
+        'webdriver_manager': 'webdriver-manager'
+    }
+
+    missing_packages = []
+
+    for package, pip_name in required_packages.items():
+        try:
+            __import__(package)
+        except ImportError:
+            missing_packages.append(pip_name)
+
+    if missing_packages:
+        print("⚠️  Eksik paketler bulundu:", ', '.join(missing_packages))
+        print("📦 Paketler otomatik olarak kuruluyor...\n")
+
+        for package in missing_packages:
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package, "-q"])
+                print(f"✅ {package} kuruldu")
+            except subprocess.CalledProcessError:
+                print(f"❌ {package} kurulamadı! Manuel olarak kurun: pip install {package}")
+                sys.exit(1)
+
+        print("\n✅ Tüm paketler hazır!\n")
+
+# Paketleri kontrol et
+check_and_install_packages()
+
+# Şimdi import'ları yap
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from datetime import datetime
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+import pandas as pd
+import time
+import re
 
-class ShopierScraper:
-    def __init__(self):
-        self.driver = None
-        self.orders_data = []
-        self.current_page = 1
+print("=" * 70)
+print("🚀 SHOPIER MÜŞTERİ BİLGİLERİ ÇEKME ARACI - FİNAL VERSİYON")
+print("=" * 70)
+print()
 
-    def setup_driver(self):
-        """Selenium WebDriver'ı başlat"""
-        print("🌐 Tarayıcı başlatılıyor...")
-        options = webdriver.ChromeOptions()
+options = webdriver.ChromeOptions()
+options.add_argument('--start-maximized')
+options.add_argument('--disable-blink-features=AutomationControlled')
 
-        # Bot tespitini zorlaştıracak ayarlar
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
+print("⏳ Chrome başlatılıyor...")
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-        # Normal bir kullanıcı gibi görün
-        options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-        options.add_argument('--start-maximized')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--no-sandbox')
+driver.get('https://www.shopier.com/m/orders.php')
 
-        try:
-            self.driver = webdriver.Chrome(options=options)
+print("✅ Chrome açıldı")
+print()
+print("=" * 70)
+print("📋 TALİMATLAR:")
+print("=" * 70)
+print("1. Shopier'e giriş yapın")
+print("2. CAPTCHA varsa manuel olarak çözün")
+print("3. Siparişler sayfasının tamamen yüklenmesini bekleyin")
+print("4. Hazır olduğunuzda buraya geri gelin ve ENTER'a basın")
+print("=" * 70)
+print()
 
-            # WebDriver özelliğini gizle
-            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+input("✅ Hazır olduğunuzda ENTER'a basın...\n")
 
-        except:
-            print("⚠️  Chrome bulunamadı, Firefox deneniyor...")
-            self.driver = webdriver.Firefox()
+musteriler = []
+sayfa_no = 1
+toplam_siparis = 0
+basarisiz = 0
 
-        self.driver.maximize_window()
+try:
+    while True:
+        print(f"\n{'='*70}")
+        print(f"📄 SAYFA {sayfa_no} İŞLENİYOR")
+        print(f"{'='*70}")
 
-    def navigate_to_orders(self):
-        """Shopier siparişler sayfasına git"""
-        print("\n📍 Shopier siparişler sayfasına gidiliyor...")
-        self.driver.get("https://www.shopier.com/m/orders.php")
-        print("⏰ Sayfa yükleniyor...")
-        time.sleep(5)  # Sayfanın tam yüklenmesini bekle
-
-    def wait_for_manual_login(self):
-        """Kullanıcının manuel giriş yapmasını bekle"""
-        print("\n" + "="*70)
-        print("⏳ LÜTFEN SHOPIER'A GİRİŞ YAPIN VE CAPTCHA'YI ÇÖZÜN")
-        print("="*70)
-        print("\n📝 ADIMLAR:")
-        print("1. Kullanıcı adı ve şifrenizi girin")
-        print("2. CAPTCHA varsa manuel olarak çözün")
-        print("3. Giriş yapın ve siparişler sayfasının açıldığından emin olun")
-        print("4. Siparişlerinizi görebildiğinizden emin olun")
-        print("\n⏰ İsterseniz çok bekleyebilirsiniz, acele yok!")
-        print("\n✅ Her şey hazır olduğunda ENTER tuşuna basın...")
-        input()
-        print("\n✅ Devam ediliyor...\n")
         time.sleep(3)
 
-    def check_and_enable_arrived_view(self):
-        """Gelimiş görünümünü kontrol et ve gerekirse aç"""
-        print("🔍 Gelimiş görünümü kontrol ediliyor...")
-
         try:
-            # Switchery elementini bul
-            switchery = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "switchery"))
-            )
+            wait = WebDriverWait(driver, 10)
+            wait.until(EC.presence_of_element_located((By.TAG_NAME, "tbody")))
 
-            # Arka plan rengine göre açık olup olmadığını kontrol et
-            style = switchery.get_attribute("style")
+            # Tablo satırlarını bul - DOĞRU SELECTOR!
+            siparis_satirlari = driver.find_elements(By.CSS_SELECTOR, 'tr[role="row"]')
 
-            # Yeşil renk kontrolü (rgb(0, 232, 186) veya benzer)
-            if "rgb(0, 232, 186)" not in style and "rgb(100, 189, 99)" not in style:
-                print("📋 Gelimiş görünümü kapalı, açılıyor...")
-                switchery.click()
-                time.sleep(2)
-                print("✅ Gelimiş görünümü açıldı!")
-            else:
-                print("✅ Gelimiş görünümü zaten açık!")
-
-        except Exception as e:
-            print(f"⚠️  Gelimiş görünümü kontrolünde hata: {e}")
-            print("Devam ediliyor...")
-
-        time.sleep(2)
-
-    def extract_order_info(self, order_element):
-        """Tek bir sipariş kartından bilgileri çıkar"""
-        try:
-            # Ad Soyad
-            fullname = order_element.find_element(By.ID, "buyer_fullname").text.strip()
-
-            # Telefon
-            phone = order_element.find_element(By.ID, "buyer_phone").text.strip()
-
-            # E-posta
-            email = order_element.find_element(By.ID, "buyer_email").text.strip()
-
-            return {
-                'fullname': fullname,
-                'phone': phone,
-                'email': email
-            }
-        except Exception as e:
-            print(f"⚠️  Sipariş bilgisi çıkarılırken hata: {e}")
-            return None
-
-    def scrape_current_page(self):
-        """Mevcut sayfadaki tüm siparişleri topla"""
-        print(f"\n📄 Sayfa {self.current_page} işleniyor...")
-
-        try:
-            # Sayfanın yüklenmesini bekle (rastgele gecikme ile insan gibi)
-            wait_time = random.uniform(2, 4)
-            time.sleep(wait_time)
-
-            # Tüm sipariş kartlarını bul
-            # buyer_fullname ID'sine sahip tüm elementlerin parent container'larını bul
-            order_cards = self.driver.find_elements(By.ID, "buyer_fullname")
-
-            print(f"   Bulunan sipariş sayısı: {len(order_cards)}")
-
-            for idx, card in enumerate(order_cards, 1):
+            # İlk satır başlık olabilir, onu çıkar
+            if len(siparis_satirlari) > 0:
+                # İlk satırın sipariş numarası var mı kontrol et
                 try:
-                    # Parent container'ı bul
-                    parent = card.find_element(By.XPATH, "./ancestor::div[contains(@class, 'col-lg-5')]")
+                    ilk_hucre = siparis_satirlari[0].find_elements(By.TAG_NAME, 'td')
+                    if ilk_hucre and 'sipariş' in ilk_hucre[0].text.lower():
+                        siparis_satirlari = siparis_satirlari[1:]  # Başlığı atla
+                except:
+                    pass
 
-                    # Bilgileri çıkar
-                    order_info = self.extract_order_info(parent)
+            siparis_sayisi = len(siparis_satirlari)
 
-                    if order_info:
-                        self.orders_data.append(order_info)
-                        print(f"   ✓ Sipariş {idx}: {order_info['fullname']}")
-                except Exception as e:
-                    print(f"   ✗ Sipariş {idx} okunamadı: {e}")
+            if siparis_sayisi == 0:
+                print("❌ Hiç sipariş satırı bulunamadı!")
+                break
+
+            print(f"✅ {siparis_sayisi} sipariş satırı bulundu")
+
+        except Exception as e:
+            print(f"❌ Sipariş satırları bulunamadı: {e}")
+            break
+
+        # Her siparişi işle
+        for i in range(siparis_sayisi):
+            try:
+                # Her iterasyonda satırları yeniden bul
+                siparis_satirlari = driver.find_elements(By.CSS_SELECTOR, 'tr[role="row"]')
+
+                # Başlık satırını tekrar atla
+                try:
+                    ilk_hucre = siparis_satirlari[0].find_elements(By.TAG_NAME, 'td')
+                    if ilk_hucre and 'sipariş' in ilk_hucre[0].text.lower():
+                        siparis_satirlari = siparis_satirlari[1:]
+                except:
+                    pass
+
+                if i >= len(siparis_satirlari):
                     continue
 
-            print(f"✅ Sayfa {self.current_page} tamamlandı! Toplam: {len(order_cards)} sipariş işlendi.\n")
+                satir = siparis_satirlari[i]
 
-        except Exception as e:
-            print(f"❌ Sayfa işlenirken hata: {e}")
+                # Satıra tıkla (detayları aç)
+                try:
+                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", satir)
+                    time.sleep(0.5)
 
-    def go_to_next_page(self):
-        """Sonraki sayfaya git"""
+                    # Tablo satırına tıklamak için, satırın içindeki bir elemente tıklayabiliriz
+                    driver.execute_script("arguments[0].click();", satir)
+                    time.sleep(2)
+
+                except Exception as e:
+                    print(f"  ⚠️  [{i+1}] Satıra tıklanamadı: {e}")
+                    continue
+
+                # Müşteri bilgilerini çek
+                try:
+                    musteri_data = {}
+
+                    # Sipariş numarasını satırdan al (tıklamadan önce)
+                    try:
+                        siparis_no_element = satir.find_element(By.TAG_NAME, 'span')
+                        siparis_no_text = siparis_no_element.text.strip()
+                        # Sadece rakamları al
+                        siparis_no = re.sub(r'[^\d]', '', siparis_no_text)
+                        musteri_data['Sipariş No'] = siparis_no if siparis_no else f"S-{toplam_siparis + 1}"
+                    except:
+                        musteri_data['Sipariş No'] = f"S-{toplam_siparis + 1}"
+
+                    # Detaylar açıldıktan sonra bilgileri al
+                    try:
+                        # Müşteri adı
+                        musteri_adi = driver.find_element(By.XPATH, '//*[contains(text(), "Müşteri:")]/following-sibling::*[1] | //*[text()="Müşteri:"]/parent::*/following-sibling::*[1]').text.strip()
+                        musteri_data['Müşteri Adı'] = musteri_adi
+                    except:
+                        musteri_data['Müşteri Adı'] = "Bilinmiyor"
+
+                    # Telefon
+                    try:
+                        telefon = driver.find_element(By.XPATH, '//*[contains(text(), "Telefon:")]/following-sibling::*[1] | //div[text()="Telefon:"]/parent::*/following-sibling::*[1]').text.strip()
+                        # Telefonu temizle
+                        telefon_temiz = re.sub(r'[^\d+\s]', '', telefon).strip()
+                        musteri_data['Telefon'] = telefon_temiz
+                    except:
+                        musteri_data['Telefon'] = ""
+
+                    # Email
+                    try:
+                        email = driver.find_element(By.XPATH, '//*[contains(text(), "E-posta:") or contains(text(), "Email:")]/following-sibling::*[1] | //div[text()="E-posta:"]/parent::*/following-sibling::*[1]').text.strip()
+                        musteri_data['Email'] = email
+                    except:
+                        musteri_data['Email'] = ""
+
+                    # Adres
+                    try:
+                        adres = driver.find_element(By.XPATH, '//*[contains(text(), "Adres:")]/following-sibling::*[1] | //div[text()="Adres:"]/parent::*/following-sibling::*[1]').text.strip()
+                        musteri_data['Adres'] = adres
+                    except:
+                        musteri_data['Adres'] = ""
+
+                    # Veriyi kaydet
+                    if musteri_data.get('Telefon') or musteri_data.get('Email'):
+                        musteriler.append(musteri_data)
+                        toplam_siparis += 1
+                        print(f"  ✅ [{toplam_siparis}] {musteri_data.get('Sipariş No')} - {musteri_data.get('Müşteri Adı', 'N/A')} - {musteri_data.get('Telefon', 'N/A')}")
+                    else:
+                        basarisiz += 1
+                        print(f"  ⚠️  [{i+1}] Telefon/email bulunamadı, atlandı")
+
+                except Exception as e:
+                    basarisiz += 1
+                    print(f"  ❌ [{i+1}] Müşteri bilgisi alınamadı: {e}")
+
+                # Detayları kapat (tekrar tıkla)
+                try:
+                    driver.execute_script("arguments[0].click();", satir)
+                    time.sleep(0.5)
+                except:
+                    pass
+
+            except Exception as e:
+                print(f"  ❌ Sipariş işlenemedi: {e}")
+                basarisiz += 1
+                continue
+
+        # Sayfa özeti
+        print(f"\n📊 Sayfa {sayfa_no} Özeti:")
+        print(f"   ✅ Başarılı: {toplam_siparis}")
+        print(f"   ❌ Başarısız: {basarisiz}")
+
+        # Sonraki sayfaya geç
         try:
-            # &gt;&gt;&gt; içeren link'i bul ve tıkla
-            next_button = self.driver.find_element(
-                By.XPATH,
-                "//a[@class='page-link' and contains(@onclick, 'requestOrderByResponseType') and contains(text(), '>>>')]"
-            )
+            # Pagination butonunu bul
+            ileri_buton = None
 
-            print(f"➡️  Sonraki sayfaya geçiliyor...")
+            try:
+                # ">" veya "İleri" içeren buton
+                ileri_buton = driver.find_element(By.XPATH, '//button[contains(text(), ">") or contains(text(), "İleri") or contains(@aria-label, "next")]')
+            except:
+                pass
 
-            # İnsan gibi davran - küçük bir gecikme
-            time.sleep(random.uniform(1, 2))
+            if not ileri_buton:
+                try:
+                    # Pagination'daki son buton
+                    ileri_buton = driver.find_element(By.XPATH, '//nav[@aria-label="pagination navigation"]//button[last()]')
+                except:
+                    pass
 
-            # JavaScript ile tıklama (daha güvenilir)
-            self.driver.execute_script("arguments[0].click();", next_button)
+            if ileri_buton and ileri_buton.is_enabled() and 'disabled' not in ileri_buton.get_attribute('class'):
+                print(f"\n⏩ Sonraki sayfaya geçiliyor...")
+                driver.execute_script("arguments[0].click();", ileri_buton)
+                time.sleep(3)
+                sayfa_no += 1
+            else:
+                print("\n🎉 SON SAYFAYA ULAŞILDI!")
+                break
 
-            self.current_page += 1
-
-            # Sayfanın yüklenmesi için daha uzun bekle
-            wait_time = random.uniform(4, 6)
-            print(f"   ⏰ Sayfa yükleniyor ({wait_time:.1f} saniye)...")
-            time.sleep(wait_time)
-
-            return True
-
-        except NoSuchElementException:
-            print("ℹ️  Sonraki sayfa bulunamadı, tüm sayfalar tamamlandı!")
-            return False
         except Exception as e:
-            print(f"⚠️  Sonraki sayfaya geçerken hata: {e}")
-            return False
+            print(f"\n🎉 Son sayfa (pagination bulunamadı)")
+            break
 
-    def display_results(self):
-        """Toplanan verileri terminalde göster"""
-        print("\n" + "="*80)
-        print("📊 TOPLANAN SİPARİŞ BİLGİLERİ")
-        print("="*80)
+except KeyboardInterrupt:
+    print("\n\n⚠️  Kullanıcı tarafından durduruldu (Ctrl+C)")
 
-        for idx, order in enumerate(self.orders_data, 1):
-            print(f"\n{idx}. Sipariş:")
-            print(f"   Ad Soyad: {order['fullname']}")
-            print(f"   Telefon : {order['phone']}")
-            print(f"   E-posta : {order['email']}")
+except Exception as e:
+    print(f"\n\n❌ Beklenmeyen hata: {e}")
+    import traceback
+    traceback.print_exc()
 
-        print("\n" + "="*80)
-        print(f"✅ Toplam {len(self.orders_data)} sipariş kaydedildi!")
-        print("="*80 + "\n")
+finally:
+    print(f"\n{'='*70}")
+    print("💾 SONUÇLAR KAYDEDİLİYOR...")
+    print(f"{'='*70}")
 
-    def save_to_file(self):
-        """Verileri masaüstüne .txt olarak kaydet"""
+    if len(musteriler) > 0:
+        df = pd.DataFrame(musteriler)
+
+        print(f"\n📋 Toplam sipariş: {len(musteriler)}")
+
+        # Tekrar edenleri temizle
+        df_unique = df.drop_duplicates(subset=['Telefon'], keep='first')
+
+        print(f"👥 Tekil müşteri: {len(df_unique)}")
+
+        # Desktop yolunu bul
         desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
 
-        # Eğer Desktop yoksa Home dizinine kaydet
+        # Eğer Desktop yoksa Documents'e veya Home'a kaydet
         if not os.path.exists(desktop_path):
-            desktop_path = os.path.expanduser("~")
-            print("⚠️  Desktop klasörü bulunamadı, Home dizinine kaydediliyor...")
+            desktop_path = os.path.join(os.path.expanduser("~"), "Documents")
+            if not os.path.exists(desktop_path):
+                desktop_path = os.path.expanduser("~")
+                print("⚠️  Desktop bulunamadı, Home dizinine kaydediliyor...")
+            else:
+                print("⚠️  Desktop bulunamadı, Documents dizinine kaydediliyor...")
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"shopier_siparisler_{timestamp}.txt"
-        filepath = os.path.join(desktop_path, filename)
+        # Excel'e kaydet
+        dosya_adi = f'shopier_musteriler_{time.strftime("%Y%m%d_%H%M%S")}.xlsx'
+        dosya_yolu = os.path.join(desktop_path, dosya_adi)
 
-        print(f"💾 Veriler kaydediliyor: {filepath}")
+        df_unique.to_excel(dosya_yolu, index=False, engine='openpyxl')
 
-        try:
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write("="*80 + "\n")
-                f.write("SHOPIER SİPARİŞ BİLGİLERİ\n")
-                f.write(f"Tarih: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\n")
-                f.write(f"Toplam Sipariş: {len(self.orders_data)}\n")
-                f.write("="*80 + "\n\n")
+        print(f"\n✅ BAŞARILI!")
+        print(f"📁 Dosya: {dosya_adi}")
+        print(f"📍 Konum: {desktop_path}")
 
-                for idx, order in enumerate(self.orders_data, 1):
-                    f.write(f"{idx}. Sipariş:\n")
-                    f.write(f"Ad Soyad: {order['fullname']}\n")
-                    f.write(f"Telefon : {order['phone']}\n")
-                    f.write(f"E-posta : {order['email']}\n")
-                    f.write("-"*80 + "\n\n")
+        # İstatistikler
+        print(f"\n{'='*70}")
+        print("📊 İSTATİSTİKLER")
+        print(f"{'='*70}")
+        print(f"✅ Başarılı: {toplam_siparis}")
+        print(f"❌ Başarısız: {basarisiz}")
+        print(f"📄 İşlenen sayfa: {sayfa_no}")
+        print(f"📧 Email sayısı: {df_unique['Email'].notna().sum()}")
+        print(f"📱 Telefon sayısı: {df_unique['Telefon'].notna().sum()}")
+        print(f"{'='*70}")
 
-            print(f"✅ Veriler başarıyla kaydedildi: {filename}")
+        # Örnek veriler göster
+        print(f"\n📋 İlk 5 Müşteri:")
+        print(df_unique.head().to_string(index=False))
 
-        except Exception as e:
-            print(f"❌ Dosya kaydedilirken hata: {e}")
+    else:
+        print("\n⚠️  Hiç veri çekilemedi!")
+        print("⚠️  Kontrol edin:")
+        print("   1. Shopier'e giriş yaptınız mı?")
+        print("   2. Siparişler sayfasında mısınız?")
+        print("   3. Sayfada sipariş var mı?")
 
-    def run(self):
-        """Ana çalıştırma fonksiyonu"""
-        try:
-            # 1. Tarayıcıyı başlat
-            self.setup_driver()
-
-            # 2. Siparişler sayfasına git
-            self.navigate_to_orders()
-
-            # 3. Manuel giriş için bekle
-            self.wait_for_manual_login()
-
-            # 4. Gelimiş görünümünü kontrol et
-            self.check_and_enable_arrived_view()
-
-            # 5. Tüm sayfaları işle
-            while True:
-                self.scrape_current_page()
-
-                # Sonraki sayfaya geç
-                if not self.go_to_next_page():
-                    break
-
-                # Güvenlik için sayfa limiti (istenirse kaldırılabilir)
-                if self.current_page > 100:  # Maksimum 100 sayfa
-                    print("⚠️  Maksimum sayfa limitine ulaşıldı!")
-                    break
-
-            # 6. Sonuçları göster
-            self.display_results()
-
-            # 7. Dosyaya kaydet
-            self.save_to_file()
-
-        except Exception as e:
-            print(f"\n❌ Hata oluştu: {e}")
-            import traceback
-            traceback.print_exc()
-
-        finally:
-            # Tarayıcıyı kapat
-            print("\n🔚 İşlem tamamlandı. Tarayıcı kapatılıyor...")
-            time.sleep(3)
-            if self.driver:
-                self.driver.quit()
-
-
-def main():
-    """Ana program"""
-    print("\n" + "="*80)
-    print("🛍️  SHOPIER SİPARİŞ BİLGİLERİ TOPLAMA ARACI")
-    print("="*80 + "\n")
-
-    scraper = ShopierScraper()
-    scraper.run()
-
-    print("\n✨ Program sonlandı. İyi günler!\n")
-
-
-if __name__ == "__main__":
-    main()
+    print("\n" + "="*70)
+    input("🔚 Tarayıcıyı kapatmak için ENTER'a basın...")
+    driver.quit()
+    print("✅ Program sonlandı")
