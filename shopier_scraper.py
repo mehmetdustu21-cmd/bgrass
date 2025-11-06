@@ -99,109 +99,92 @@ try:
 
         try:
             wait = WebDriverWait(driver, 10)
-            wait.until(EC.presence_of_element_located((By.TAG_NAME, "tbody")))
+            wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
-            # Tablo satırlarını bul - DOĞRU SELECTOR!
-            siparis_satirlari = driver.find_elements(By.CSS_SELECTOR, 'tr[role="row"]')
+            # Sipariş kartlarını bul - buyer_fullname ID'sine sahip elementler
+            # Her buyer_fullname bir sipariş kartını temsil eder
+            siparis_kartlari = driver.find_elements(By.ID, 'buyer_fullname')
 
-            # İlk satır başlık olabilir, onu çıkar
-            if len(siparis_satirlari) > 0:
-                # İlk satırın sipariş numarası var mı kontrol et
-                try:
-                    ilk_hucre = siparis_satirlari[0].find_elements(By.TAG_NAME, 'td')
-                    if ilk_hucre and 'sipariş' in ilk_hucre[0].text.lower():
-                        siparis_satirlari = siparis_satirlari[1:]  # Başlığı atla
-                except:
-                    pass
-
-            siparis_sayisi = len(siparis_satirlari)
+            siparis_sayisi = len(siparis_kartlari)
 
             if siparis_sayisi == 0:
-                print("❌ Hiç sipariş satırı bulunamadı!")
+                print("❌ Hiç sipariş bulunamadı!")
+                print("⚠️  Lütfen siparişler sayfasında olduğunuzdan emin olun.")
                 break
 
-            print(f"✅ {siparis_sayisi} sipariş satırı bulundu")
+            print(f"✅ {siparis_sayisi} sipariş bulundu")
 
         except Exception as e:
-            print(f"❌ Sipariş satırları bulunamadı: {e}")
+            print(f"❌ Sipariş kartları bulunamadı: {e}")
             break
 
         # Her siparişi işle
         for i in range(siparis_sayisi):
             try:
-                # Her iterasyonda satırları yeniden bul
-                siparis_satirlari = driver.find_elements(By.CSS_SELECTOR, 'tr[role="row"]')
+                # Her iterasyonda sipariş kartlarını yeniden bul
+                siparis_kartlari = driver.find_elements(By.ID, 'buyer_fullname')
 
-                # Başlık satırını tekrar atla
-                try:
-                    ilk_hucre = siparis_satirlari[0].find_elements(By.TAG_NAME, 'td')
-                    if ilk_hucre and 'sipariş' in ilk_hucre[0].text.lower():
-                        siparis_satirlari = siparis_satirlari[1:]
-                except:
-                    pass
-
-                if i >= len(siparis_satirlari):
+                if i >= len(siparis_kartlari):
                     continue
 
-                satir = siparis_satirlari[i]
-
-                # Satıra tıkla (detayları aç)
-                try:
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", satir)
-                    time.sleep(0.5)
-
-                    # Tablo satırına tıklamak için, satırın içindeki bir elemente tıklayabiliriz
-                    driver.execute_script("arguments[0].click();", satir)
-                    time.sleep(2)
-
-                except Exception as e:
-                    print(f"  ⚠️  [{i+1}] Satıra tıklanamadı: {e}")
-                    continue
+                kart = siparis_kartlari[i]
 
                 # Müşteri bilgilerini çek
                 try:
                     musteri_data = {}
 
-                    # Sipariş numarasını satırdan al (tıklamadan önce)
+                    # Müşteri adı (buyer_fullname elementinden)
                     try:
-                        siparis_no_element = satir.find_element(By.TAG_NAME, 'span')
-                        siparis_no_text = siparis_no_element.text.strip()
-                        # Sadece rakamları al
-                        siparis_no = re.sub(r'[^\d]', '', siparis_no_text)
-                        musteri_data['Sipariş No'] = siparis_no if siparis_no else f"S-{toplam_siparis + 1}"
-                    except:
-                        musteri_data['Sipariş No'] = f"S-{toplam_siparis + 1}"
-
-                    # Detaylar açıldıktan sonra bilgileri al
-                    try:
-                        # Müşteri adı
-                        musteri_adi = driver.find_element(By.XPATH, '//*[contains(text(), "Müşteri:")]/following-sibling::*[1] | //*[text()="Müşteri:"]/parent::*/following-sibling::*[1]').text.strip()
-                        musteri_data['Müşteri Adı'] = musteri_adi
+                        musteri_adi = kart.text.strip()
+                        musteri_data['Müşteri Adı'] = musteri_adi if musteri_adi else "Bilinmiyor"
                     except:
                         musteri_data['Müşteri Adı'] = "Bilinmiyor"
 
-                    # Telefon
+                    # Parent container'ı bul (aynı sipariş kartı içindeki diğer bilgiler için)
                     try:
-                        telefon = driver.find_element(By.XPATH, '//*[contains(text(), "Telefon:")]/following-sibling::*[1] | //div[text()="Telefon:"]/parent::*/following-sibling::*[1]').text.strip()
+                        parent_container = kart.find_element(By.XPATH, './ancestor::div[contains(@class, "col-lg-5") or contains(@class, "col-sm-5")][1]')
+                    except:
+                        # Alternatif: daha genel parent
+                        try:
+                            parent_container = kart.find_element(By.XPATH, './ancestor::div[3]')
+                        except:
+                            parent_container = driver  # Tüm sayfadan ara
+
+                    # Telefon - parent container içinde buyer_phone ID'sini ara
+                    try:
+                        telefon_element = parent_container.find_element(By.ID, 'buyer_phone')
+                        telefon = telefon_element.text.strip()
                         # Telefonu temizle
                         telefon_temiz = re.sub(r'[^\d+\s]', '', telefon).strip()
                         musteri_data['Telefon'] = telefon_temiz
                     except:
                         musteri_data['Telefon'] = ""
 
-                    # Email
+                    # Email - parent container içinde buyer_email ID'sini ara
                     try:
-                        email = driver.find_element(By.XPATH, '//*[contains(text(), "E-posta:") or contains(text(), "Email:")]/following-sibling::*[1] | //div[text()="E-posta:"]/parent::*/following-sibling::*[1]').text.strip()
+                        email_element = parent_container.find_element(By.ID, 'buyer_email')
+                        email = email_element.text.strip()
                         musteri_data['Email'] = email
                     except:
                         musteri_data['Email'] = ""
 
-                    # Adres
+                    # Adres - parent container içinde buyer_address ID'sini ara
                     try:
-                        adres = driver.find_element(By.XPATH, '//*[contains(text(), "Adres:")]/following-sibling::*[1] | //div[text()="Adres:"]/parent::*/following-sibling::*[1]').text.strip()
+                        adres_element = parent_container.find_element(By.ID, 'buyer_address')
+                        adres = adres_element.text.strip()
                         musteri_data['Adres'] = adres
                     except:
                         musteri_data['Adres'] = ""
+
+                    # Sipariş numarası
+                    try:
+                        # Parent içinde sipariş numarasını ara
+                        siparis_no_element = parent_container.find_element(By.XPATH, './/span[contains(text(), "#") or contains(@class, "order")]')
+                        siparis_no_text = siparis_no_element.text.strip()
+                        siparis_no = re.sub(r'[^\d]', '', siparis_no_text)
+                        musteri_data['Sipariş No'] = siparis_no if siparis_no else f"S-{toplam_siparis + 1}"
+                    except:
+                        musteri_data['Sipariş No'] = f"S-{toplam_siparis + 1}"
 
                     # Veriyi kaydet
                     if musteri_data.get('Telefon') or musteri_data.get('Email'):
@@ -216,13 +199,6 @@ try:
                     basarisiz += 1
                     print(f"  ❌ [{i+1}] Müşteri bilgisi alınamadı: {e}")
 
-                # Detayları kapat (tekrar tıkla)
-                try:
-                    driver.execute_script("arguments[0].click();", satir)
-                    time.sleep(0.5)
-                except:
-                    pass
-
             except Exception as e:
                 print(f"  ❌ Sipariş işlenemedi: {e}")
                 basarisiz += 1
@@ -235,33 +211,53 @@ try:
 
         # Sonraki sayfaya geç
         try:
-            # Pagination butonunu bul
+            # Pagination butonunu bul - farklı yöntemler dene
             ileri_buton = None
 
+            # Yöntem 1: ">>>" veya benzeri metinli link/buton
             try:
-                # ">" veya "İleri" içeren buton
-                ileri_buton = driver.find_element(By.XPATH, '//button[contains(text(), ">") or contains(text(), "İleri") or contains(@aria-label, "next")]')
+                ileri_buton = driver.find_element(By.XPATH, '//a[contains(text(), ">>>") or contains(text(), "İleri") or contains(text(), "Next")]')
             except:
                 pass
 
+            # Yöntem 2: Buton elementi
             if not ileri_buton:
                 try:
-                    # Pagination'daki son buton
-                    ileri_buton = driver.find_element(By.XPATH, '//nav[@aria-label="pagination navigation"]//button[last()]')
+                    ileri_buton = driver.find_element(By.XPATH, '//button[contains(text(), ">") or contains(text(), "İleri") or contains(@aria-label, "next")]')
                 except:
                     pass
 
-            if ileri_buton and ileri_buton.is_enabled() and 'disabled' not in ileri_buton.get_attribute('class'):
+            # Yöntem 3: Pagination içindeki son element
+            if not ileri_buton:
+                try:
+                    ileri_buton = driver.find_element(By.XPATH, '//ul[contains(@class, "pagination")]//a[contains(text(), ">")]')
+                except:
+                    pass
+
+            if ileri_buton and ileri_buton.is_enabled():
+                # Disabled olup olmadığını kontrol et
+                parent_li = None
+                try:
+                    parent_li = ileri_buton.find_element(By.XPATH, './parent::li')
+                except:
+                    pass
+
+                if parent_li and 'disabled' in parent_li.get_attribute('class'):
+                    print("\n🎉 SON SAYFAYA ULAŞILDI!")
+                    break
+
                 print(f"\n⏩ Sonraki sayfaya geçiliyor...")
+                driver.execute_script("arguments[0].scrollIntoView();", ileri_buton)
+                time.sleep(1)
                 driver.execute_script("arguments[0].click();", ileri_buton)
-                time.sleep(3)
+                time.sleep(4)  # Sayfanın yüklenmesi için bekle
                 sayfa_no += 1
             else:
                 print("\n🎉 SON SAYFAYA ULAŞILDI!")
                 break
 
         except Exception as e:
-            print(f"\n🎉 Son sayfa (pagination bulunamadı)")
+            print(f"\n🎉 Son sayfa (pagination bulunamadı: {e})")
             break
 
 except KeyboardInterrupt:
