@@ -1,0 +1,55 @@
+{{ 'cargo-tracker.css' | asset_url | stylesheet_tag }}
+
+{% comment %}
+  ÜRÜN SAYFASI VERSİYONU - Her zaman TÜM animasyonlar aktif
+  Kullanım: {% render 'cargo-tracker-product' %}
+{% endcomment %}
+
+{% assign today = 'now' | date: '%s' %}
+{% assign shipping_start = today | plus: 172800 | date: '%d %B' %}
+{% assign shipping_end = today | plus: 432000 | date: '%d %B' %}
+{% assign delivery_start = today | plus: 432000 | date: '%d %B' %}
+{% assign delivery_end = today | plus: 604800 | date: '%d %B' %}
+
+<div class="cargo-track">
+  <div class="cargo-container">
+
+    <div class="cargo-step">
+      <div class="cargo-icon active">
+        <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Cart-Icon.svg" alt="Cart">
+      </div>
+      <div class="cargo-text">Sipariş verildi</div>
+    </div>
+
+    <div class="cargo-road">
+      <div class="road-wrap moving">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <div class="cargo-step">
+      <div class="cargo-icon active">
+        <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Deliver-Icon.svg" alt="Deliver">
+      </div>
+      <div class="cargo-text">Gönderildi<br><small>{{ shipping_start }} - {{ shipping_end }}</small></div>
+    </div>
+
+    <div class="cargo-road">
+      <div class="road-wrap moving">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <div class="cargo-step">
+      <div class="cargo-icon active">
+        <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Box-Icon.svg" alt="Box">
+      </div>
+      <div class="cargo-text">Teslim edildi<br><small>{{ delivery_start }} - {{ delivery_end }}</small></div>
+    </div>
+
+  </div>
+</div>

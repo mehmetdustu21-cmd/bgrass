@@ -2,6 +2,24 @@
 
 Shopify için animasyonlu kargo takip komponenti.
 
+## 🚀 Hızlı Başlangıç
+
+### Ürün Sayfasında Kullanım (Önerilen)
+
+**Detaylı kurulum için:** [URUN-SAYFASI-KURULUM.md](./URUN-SAYFASI-KURULUM.md) dosyasını okuyun.
+
+1. `assets/cargo-tracker.css` → Assets klasörüne yükleyin
+2. `snippets/cargo-tracker-product.liquid` → Snippets klasörüne yükleyin
+3. Ürün sayfanıza ekleyin:
+
+```liquid
+{%- render 'cargo-tracker-product' -%}
+```
+
+**Bu versiyonda her zaman TÜM animasyonlar aktif!** (test.html Test 3 gibi)
+
+---
+
 ## Kurulum
 
 ### 1. Dosyaları Yükleme
@@ -9,11 +27,19 @@ Shopify için animasyonlu kargo takip komponenti.
 **Shopify Admin'e gidin:**
 1. Online Store → Themes → Actions → Edit code
 2. `assets/cargo-tracker.css` dosyasını Assets klasörüne yükleyin
-3. `snippets/cargo-tracker.liquid` dosyasını Snippets klasörüne yükleyin
+3. Kullanım senaryonuza göre snippet seçin:
+   - **Ürün sayfası için:** `snippets/cargo-tracker-product.liquid`
+   - **Order tracking için:** `snippets/cargo-tracker.liquid`
 
 ### 2. Kullanım
 
-Herhangi bir Liquid dosyasında snippet'i dahil edin:
+#### A. Ürün Sayfasında (Her zaman animasyonlu)
+
+```liquid
+{%- render 'cargo-tracker-product' -%}
+```
+
+#### B. Order Tracking Sayfasında (Status parametreli)
 
 ```liquid
 {% render 'cargo-tracker', status: 'shipping' %}
@@ -170,13 +196,15 @@ console.log(window.getComputedStyle(moving).animation);
 
 ```
 assets/
-  ├── cargo-tracker.css    # Ana CSS dosyası (zorunlu)
-  └── cargo-tracker.js     # JavaScript alternatifi (opsiyonel)
+  ├── cargo-tracker.css            # Ana CSS dosyası (zorunlu)
+  └── cargo-tracker.js             # JavaScript alternatifi (opsiyonel)
 
 snippets/
-  └── cargo-tracker.liquid # Shopify snippet
+  ├── cargo-tracker-product.liquid # Ürün sayfası versiyonu (her zaman animasyonlu) ⭐
+  └── cargo-tracker.liquid         # Order tracking versiyonu (status parametreli)
 
-test.html                  # Lokal test dosyası
+test.html                          # Lokal test dosyası
+URUN-SAYFASI-KURULUM.md           # Ürün sayfası kurulum kılavuzu
 ```
 
 ## Lisans
