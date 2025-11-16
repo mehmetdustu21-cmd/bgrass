@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cargo Tracker Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+
+    .test-section {
+      background: white;
+      padding: 30px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+
+    .status-label {
+      display: inline-block;
+      padding: 5px 15px;
+      background: #333;
+      color: white;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    /* CSS BAŞLANGICI */
+    .cargo-track {
+      width: 100%;
+      padding: 20px 10px;
+      background: #fff;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+
+    .cargo-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 10px;
+    }
+
+    .cargo-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .cargo-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.3;
+      transition: opacity 0.3s ease;
+    }
+
+    .cargo-icon.active {
+      opacity: 1;
+    }
+
+    .cargo-icon img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .cargo-text {
+      font-size: 10px;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .cargo-text small {
+      font-size: 8px;
+      color: #999;
+      font-weight: 400;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .cargo-road {
+      flex: 1;
+      height: 3px;
+      position: relative;
+      overflow: hidden;
+      margin: 0 15px;
+      max-width: 120px;
+      background: transparent;
+    }
+
+    .road-wrap {
+      position: absolute;
+      width: 300%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      /* GPU Acceleration için */
+      will-change: transform;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      -webkit-perspective: 1000;
+      perspective: 1000;
+    }
+
+    .road-wrap span {
+      width: 15px;
+      height: 3px;
+      background: #333;
+      border-radius: 1px;
+      flex-shrink: 0;
+    }
+
+    .road-wrap.moving {
+      -webkit-animation: dashMove 0.8s linear infinite;
+      animation: dashMove 0.8s linear infinite;
+    }
+
+    /* WebKit prefix ile animasyon */
+    @-webkit-keyframes dashMove {
+      0% {
+        -webkit-transform: translateX(0) translateZ(0);
+        transform: translateX(0) translateZ(0);
+      }
+      100% {
+        -webkit-transform: translateX(-25px) translateZ(0);
+        transform: translateX(-25px) translateZ(0);
+      }
+    }
+
+    @keyframes dashMove {
+      0% {
+        -webkit-transform: translateX(0) translateZ(0);
+        transform: translateX(0) translateZ(0);
+      }
+      100% {
+        -webkit-transform: translateX(-25px) translateZ(0);
+        transform: translateX(-25px) translateZ(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="test-section">
+    <h2>Test 1: Sipariş Verildi (Preparing)</h2>
+    <span class="status-label">Status: preparing</span>
+
+    <div class="cargo-track">
+      <div class="cargo-container">
+
+        <div class="cargo-step">
+          <div class="cargo-icon active">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Cart-Icon.svg" alt="Cart">
+          </div>
+          <div class="cargo-text">Sipariş verildi</div>
+        </div>
+
+        <div class="cargo-road">
+          <div class="road-wrap">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="cargo-step">
+          <div class="cargo-icon">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Deliver-Icon.svg" alt="Deliver">
+          </div>
+          <div class="cargo-text">Gönderildi<br><small>18 Kasım - 21 Kasım</small></div>
+        </div>
+
+        <div class="cargo-road">
+          <div class="road-wrap">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="cargo-step">
+          <div class="cargo-icon">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Box-Icon.svg" alt="Box">
+          </div>
+          <div class="cargo-text">Teslim edildi<br><small>21 Kasım - 23 Kasım</small></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 2: Gönderildi (Shipping) - ANIMASYON AKTİF</h2>
+    <span class="status-label">Status: shipping</span>
+
+    <div class="cargo-track">
+      <div class="cargo-container">
+
+        <div class="cargo-step">
+          <div class="cargo-icon active">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Cart-Icon.svg" alt="Cart">
+          </div>
+          <div class="cargo-text">Sipariş verildi</div>
+        </div>
+
+        <div class="cargo-road">
+          <div class="road-wrap moving">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="cargo-step">
+          <div class="cargo-icon active">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Deliver-Icon.svg" alt="Deliver">
+          </div>
+          <div class="cargo-text">Gönderildi<br><small>18 Kasım - 21 Kasım</small></div>
+        </div>
+
+        <div class="cargo-road">
+          <div class="road-wrap">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="cargo-step">
+          <div class="cargo-icon">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Box-Icon.svg" alt="Box">
+          </div>
+          <div class="cargo-text">Teslim edildi<br><small>21 Kasım - 23 Kasım</small></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 3: Teslim Edildi (Delivered) - TÜM ANIMASYONLAR AKTİF</h2>
+    <span class="status-label">Status: delivered</span>
+
+    <div class="cargo-track">
+      <div class="cargo-container">
+
+        <div class="cargo-step">
+          <div class="cargo-icon active">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Cart-Icon.svg" alt="Cart">
+          </div>
+          <div class="cargo-text">Sipariş verildi</div>
+        </div>
+
+        <div class="cargo-road">
+          <div class="road-wrap moving">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="cargo-step">
+          <div class="cargo-icon active">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Deliver-Icon.svg" alt="Deliver">
+          </div>
+          <div class="cargo-text">Gönderildi<br><small>18 Kasım - 21 Kasım</small></div>
+        </div>
+
+        <div class="cargo-road">
+          <div class="road-wrap moving">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="cargo-step">
+          <div class="cargo-icon active">
+            <img src="https://cdn.shopify.com/extensions/019a8303-4696-7ba9-93a4-d3f7854f5ec8/sternify-1023/assets/st_Box-Icon.svg" alt="Box">
+          </div>
+          <div class="cargo-text">Teslim edildi<br><small>21 Kasım - 23 Kasım</small></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Animasyon Kontrolü</h2>
+    <p><strong>Eğer çizgiler hareket ediyorsa:</strong> CSS çalışıyor ✅</p>
+    <p><strong>Eğer çizgiler hareket etmiyorsa:</strong> Tarayıcı console'u açın (F12) ve hata var mı kontrol edin ❌</p>
+    <button onclick="checkAnimation()" style="padding: 10px 20px; background: #333; color: white; border: none; border-radius: 4px; cursor: pointer;">Animasyon Durumunu Kontrol Et</button>
+  </div>
+
+  <script>
+    function checkAnimation() {
+      const movingElements = document.querySelectorAll('.road-wrap.moving');
+      console.log('Moving elements found:', movingElements.length);
+
+      if (movingElements.length > 0) {
+        const firstElement = movingElements[0];
+        const computedStyle = window.getComputedStyle(firstElement);
+        const animation = computedStyle.animation || computedStyle.webkitAnimation;
+
+        console.log('Animation value:', animation);
+        console.log('Transform value:', computedStyle.transform);
+
+        if (animation && animation !== 'none') {
+          alert('✅ ANIMASYON ÇALIŞIYOR!\n\nAnimation: ' + animation);
+        } else {
+          alert('❌ ANIMASYON ÇALIŞMIYOR!\n\nLütfen browser console\'u (F12) kontrol edin.');
+        }
+      } else {
+        alert('⚠️ .moving class\'ı bulunamadı');
+      }
+    }
+
+    // Sayfa yüklendiğinde otomatik kontrol
+    window.addEventListener('load', function() {
+      console.log('Page loaded, checking animation...');
+      setTimeout(checkAnimation, 1000);
+    });
+  </script>
+
+</body>
+</html>

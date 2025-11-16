@@ -1,5 +1,10 @@
 {{ 'cargo-tracker.css' | asset_url | stylesheet_tag }}
 
+{% comment %}
+  JavaScript animasyon versiyonu - CSS çalışmazsa aktif edin
+  {{ 'cargo-tracker.js' | asset_url | script_tag }}
+{% endcomment %}
+
 {% assign current_status = status | default: 'preparing' %}
 {% assign today = 'now' | date: '%s' %}
 {% assign shipping_start = today | plus: 172800 | date: '%d %B' %}

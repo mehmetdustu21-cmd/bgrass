@@ -77,6 +77,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  /* GPU Acceleration için */
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-perspective: 1000;
+  perspective: 1000;
 }
 
 .road-wrap span {
@@ -88,16 +96,30 @@
 }
 
 .road-wrap.moving {
+  -webkit-animation: dashMove 0.8s linear infinite;
   animation: dashMove 0.8s linear infinite;
 }
 
-/* Animasyon: Bir dash + gap kadar hareket (15px + 10px = 25px) */
-@keyframes dashMove {
+/* WebKit prefix ile animasyon */
+@-webkit-keyframes dashMove {
   0% {
-    transform: translateX(0);
+    -webkit-transform: translateX(0) translateZ(0);
+    transform: translateX(0) translateZ(0);
   }
   100% {
-    transform: translateX(-25px);
+    -webkit-transform: translateX(-25px) translateZ(0);
+    transform: translateX(-25px) translateZ(0);
+  }
+}
+
+@keyframes dashMove {
+  0% {
+    -webkit-transform: translateX(0) translateZ(0);
+    transform: translateX(0) translateZ(0);
+  }
+  100% {
+    -webkit-transform: translateX(-25px) translateZ(0);
+    transform: translateX(-25px) translateZ(0);
   }
 }
 
@@ -113,12 +135,30 @@
   }
 
   .road-wrap.moving {
+    -webkit-animation: dashMoveMobile 0.8s linear infinite;
     animation: dashMoveMobile 0.8s linear infinite;
   }
 
+  @-webkit-keyframes dashMoveMobile {
+    0% {
+      -webkit-transform: translateX(0) translateZ(0);
+      transform: translateX(0) translateZ(0);
+    }
+    100% {
+      -webkit-transform: translateX(-22px) translateZ(0);
+      transform: translateX(-22px) translateZ(0);
+    }
+  }
+
   @keyframes dashMoveMobile {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-22px); }
+    0% {
+      -webkit-transform: translateX(0) translateZ(0);
+      transform: translateX(0) translateZ(0);
+    }
+    100% {
+      -webkit-transform: translateX(-22px) translateZ(0);
+      transform: translateX(-22px) translateZ(0);
+    }
   }
 }
 
@@ -130,10 +170,5 @@
 
   .road-wrap span {
     width: 10px;
-  }
-
-  @keyframes dashMoveMobile {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-20px); }
   }
 }
