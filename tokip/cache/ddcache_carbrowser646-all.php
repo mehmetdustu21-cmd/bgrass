@@ -1,0 +1,1 @@
+<?php return 'sp9853i_1h10_vmm|Mac Audio Spro|(?:Tesla/(?:(?:develop|feature|terminal-das-fsd-eap)-)?[0-9.]+|QtCarBrowser)|AFTLFT962X3(?:[);/ ]|$)|AFTLBT962E2(?:[);/ ]|$)';
