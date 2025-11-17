@@ -1,0 +1,30 @@
+[
+    {
+        "timestamp": "2025-06-27 14:45:00",
+        "ip_address": "UNKNOWN",
+        "user_agent": "Mozilla\/5.0 (compatible; Googlebot\/2.1; +http:\/\/www.google.com\/bot.html)",
+        "bot_details": {
+            "name": "Googlebot",
+            "category": "Search bot",
+            "url": "https:\/\/developers.google.com\/search\/docs\/crawling-indexing\/overview-google-crawlers",
+            "producer": {
+                "name": "Google Inc.",
+                "url": "https:\/\/www.google.com\/"
+            }
+        }
+    },
+    {
+        "timestamp": "2025-06-27 14:48:21",
+        "ip_address": "UNKNOWN",
+        "user_agent": "Mozilla\/5.0 (compatible; Googlebot\/2.1; +http:\/\/www.google.com\/bot.html)",
+        "bot_details": {
+            "name": "Googlebot",
+            "category": "Search bot",
+            "url": "https:\/\/developers.google.com\/search\/docs\/crawling-indexing\/overview-google-crawlers",
+            "producer": {
+                "name": "Google Inc.",
+                "url": "https:\/\/www.google.com\/"
+            }
+        }
+    }
+]
